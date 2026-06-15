@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPF CD App</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { margin: 0; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Navigation Bar styling */
+        nav { display: flex; background: green; padding: 5px; gap: 5px; }
+        /* FIXED font-size missing number error here */
+        button { padding: 8px 12px; font-size: 16px; cursor: pointer; background: blue; color: white; border: none; border-radius: 4px; }
+        button:hover { background: red; }
+        
+        /* Sub-menus for WW and QQ */
+        .sub-menu { display: none; background: orange; padding: 5px 5px; gap: 5px; }
+        .sub-menu.active { display: flex; }
+
+        /* The viewport where your sites will load */
+        iframe { flex-grow: 1; border: none; width: 100%; height: calc(100vh - 90px); }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <button onclick="toggleMenu('ww')">መግኣዚ ንድሕሪት</button>
+        <button onclick="toggleMenu('qq')">መግኣዚ ንቕድሚት</button>
+    </nav>
+
+    <div id="menu-ww" class="sub-menu">
+        <button onclick="loadSite('መግኣዚ ንድሕርት.html')">መግኣዚ ንድሕሪት መፍትሒ</button>
+        <button onclick="loadSite('መግአዚ ንድሕሪት መእሰሪ.html')">መግኣዚ ንድሕሪት መእሰሪ</button>
+    </div>
+
+    <div id="menu-qq" class="sub-menu">
+        <button onclick="loadSite('መግኣዚ ንቕድሚት.html')">መግኣዚ ንቕድሚት መፍትሒ</button>
+        <button onclick="loadSite('መግአዚ ንቕድሚት መእሰሪ.html')">መግኣዚ ንቕድሚት መእሰሪ</button>
+    </div>
+
+    <iframe id="app-viewport" src="about:blank"></iframe>
+
+  
+    <script>
+        // Logic to show WW or QQ sub-menus
+        function toggleMenu(menuId) {
+            document.querySelectorAll('.sub-menu').forEach(menu => menu.classList.remove('active'));
+            document.getElementById('menu-' + menuId).classList.add('active');
+        }
+
+        // Logic to load the specific HTML file into the view
+        function loadSite(url) {
+            document.getElementById('app-viewport').src = url;
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // FIXED: Removed the absolute domain slash / to ensure compatibility with GitHub Pages
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker Registered!', reg))
+                    .catch(err => console.log('Service Worker Failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
