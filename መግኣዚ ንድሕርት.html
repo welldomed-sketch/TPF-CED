@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified 3-Matrix Cipher Engine</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --border: #cbd5e1;
+            --text: #0f172a;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 { text-align: center; font-size: 1.6rem; margin-bottom: 0.5rem; color: #1e293b; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            .workspace { grid-template-columns: 1fr 1fr; }
+            .full-row { grid-column: span 2; }
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+            background-color: green;
+            color: purple;
+        }
+
+        .card h2 { font-size: 1rem; color: #334155; margin-top: 0; margin-bottom: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.4rem; }
+
+        .table-wrap {
+            max-height: 380px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9rem; }
+        th { background-color: blue; color: red; font-size: 1.05rem; font-weight: 600; padding: 0.6rem; border: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+        td { padding: 0.4rem; border: 1px solid var(--border); }
+
+        .matrix-input {
+            width: 85%;
+            padding: 0.35rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .matrix-input:focus { border-color: var(--primary); background-color: #eff6ff; }
+        
+        .matrix-input:disabled {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border-color: #e2e8f0;
+            cursor: not-allowed;
+        }
+        
+        .static-fidel { font-weight: bold; color: #0f172a; font-size: 1.1rem; }
+
+        .translator-card {
+            background: #1e293b;
+            color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .translator-card h2 { color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; margin-top: 0; }
+        
+        .io-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        @media (min-width: 600px) { .io-group { grid-template-columns: 1fr 1fr; } }
+
+        .field { display: flex; flex-direction: column; gap: 0.5rem; }
+        .field label { font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; font-weight: bold; }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background-color: #ef4444; }
+        .btn-success { background-color: #22c55e; }
+        .btn-warning { background-color: #f59e0b; color: white; }
+        
+        .action-container {
+            grid-column: span 1;
+            display: flex;
+            gap: 0.5rem;
+        }
+        @media (min-width: 900px) { .action-container { grid-column: span 2; } }
+
+        .cipher-textarea {
+            width: 110%;
+            height: 400px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #38bdf8;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+        #outputBox { color: #4ade80; background: #0f172a; font-family: system-ui, sans-serif;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>መግኣዚ ንድሕሪት መፍትሒ</h1>
+    <div class="custom-field-card" style="background: #ffffff; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+        <h1 style="text-align: left; font-size: 1.2rem; margin-top: 0;">መፀውዕ ኮድ</h1>
+        <textarea id="metseweCodeBox" style="width: 100%; height: 60px; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; outline: none; resize: none; box-sizing: border-box;" placeholder="መፀውዕ ኮድ ፅሓፍ"></textarea>
+    </div>
+    <div class="workspace">
+        
+        <div class="card">
+            <h2>ተነባቢ</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ፊደል</th>
+                            <th>ምልክት</th>
+                            <th>ፊደል</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t1Body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>መግአዚ</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ምልክት</th>
+                            <th>መናበብ</th>
+                            <th>ምልክት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t2Body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card full-row">
+            <h2>ቑፅሪታት</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ቑፅሪ</th>
+                            <th>ምልክት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t3Body"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="action-container">
+            <button class="btn btn-success" id="saveMatrixBtn">ኮድ ኣስፍር</button>
+            <button class="btn btn-warning" id="editMatrixBtn" style="display: none;">ኣስተኻኽል</button>
+        </div>
+    
+    </div>
+
+    <div class="translator-card">
+        <h2>ኮድ መፅሓፊ</h2>
+        <div class="io-group">
+            <div class="field">
+                <label for="inputBox">ኮድ ኣብዚ ፅሓፍ</label>
+                <textarea id="inputBox" class="cipher-textarea" placeholder="ፅሓፍ"></textarea>
+            </div>
+            <button class="btn btn-danger" id="clearInputBtn">ኮድ ኣጥፍእ</button>
+       
+            <div class="field">
+                <label for="outputBox">ውፅኢት ኮድ </label>
+                <textarea id="outputBox" class="cipher-textarea" placeholder="ውፅእት"></textarea>
+            </div>
+            <button class="btn" id="downloadTextBtn">ፅሑፍ ኣውርድ</button>
+          
+        </div>
+    </div>
+</div>
+
+<script>
+    const fixedAmharicVowels = ['ሀ', 'ሁ', 'ሂ', 'ሃ', 'ሄ', 'ህ', 'ሆ'];
+    
+    const amharicBase = "ሀለሐመሠረሰሸቀበቨተቸኀነኘአከኸወዐዘዠየደጀገጠጨጰጸፀፈፐ";
+    const baseAmharicRegex = new RegExp(`[^${amharicBase}]`, 'g');
+    const baseSignNumRegex = new RegExp(`[^${amharicBase}0-9+\\-*=]`, 'g');
+    const numberOnlyRegex = /[^0-9]/g;
+
+    let masterTranslationClean = "";
+
+    // 1. Strict Keydown Lock for OutputBox
+    document.getElementById('outputBox').addEventListener('keydown', function(event) {
+        if (event.key === " " || 
+            event.key === "Backspace" || 
+            event.key === "Delete" || 
+            event.key.startsWith("Arrow")) {
+            return;
+        }
+        event.preventDefault();
+    });
+
+    // 2. Ironclad Input Filter for OutputBox
+    document.getElementById('outputBox').addEventListener('input', function(event) {
+        let currentVal = this.value;
+        let cleanBuilder = "";
+        let masterIdx = 0;
+
+        for (let i = 0; i < currentVal.length; i++) {
+            let char = currentVal[i];
+            if (char === " " || char === "\n") {
+                cleanBuilder += char;
+            } else if (masterIdx < masterTranslationClean.length && char === masterTranslationClean[masterIdx]) {
+                cleanBuilder += char;
+                masterIdx++;
+            }
+        }
+        this.value = cleanBuilder;
+    });
+
+    // --- NEW ELEMENT FILTERING LOGIC FOR INPUTBOX ---
+    function filterInputBoxCharacters() {
+        const inputBox = document.getElementById('inputBox');
+        let currentVal = inputBox.value;
+        
+        // 1. Scan all active inputs within the three tables to collect current accepted characters
+        let allowedSet = new Set([" ", "\n"]); // Always allow spaces and linebreaks natively
+        
+        document.querySelectorAll('.matrix-input').forEach(input => {
+            let val = input.value.trim();
+            if (val) {
+                // Handle table 3 columns which might contain 2 character pairs
+                for (let char of val) {
+                    allowedSet.add(char);
+                }
+            }
+        });
+
+        // 2. Filter input layout character strings against our freshly built Allowed Set
+        let cleanText = "";
+        for (let i = 0; i < currentVal.length; i++) {
+            if (allowedSet.has(currentVal[i])) {
+                cleanText += currentVal[i];
+            }
+        }
+
+        if (inputBox.value !== cleanText) {
+            inputBox.value = cleanText;
+        }
+    }
+
+    function isDuplicateInScope(tableId, targetInput, valueToTest, targetScopeClass) {
+        if (!valueToTest) return false;
+        
+        let queryPattern = '#' + tableId + ' .matrix-input';
+        if (targetScopeClass) {
+            queryPattern = '#' + tableId + ' .' + targetScopeClass;
+        }
+
+        const scopedInputs = document.querySelectorAll(queryPattern);
+        let duplicateFound = false;
+
+        scopedInputs.forEach(function(input) {
+            if (input !== targetInput && input.value.trim() === valueToTest) {
+                duplicateFound = true;
+            }
+        });
+        return duplicateFound;
+    }
+
+    function restrictInput(tableId, element, regex, maxLength, columnScopeClass) {
+        element.addEventListener('input', function() {
+            this.value = this.value.replace(regex, '');
+            
+            if (this.value.length > maxLength) {
+                this.value = this.value.substring(0, maxLength);
+            }
+
+            const cleanValue = this.value.trim();
+
+            let customConflict = false;
+            if (tableId === 't1Body') {
+                if (columnScopeClass === 't1-c2') {
+                    customConflict = isDuplicateInScope(tableId, this, cleanValue, 't1-c2');
+                } else {
+                    customConflict = isDuplicateInScope(tableId, this, cleanValue, 't1-c1') || 
+                                     isDuplicateInScope(tableId, this, cleanValue, 't1-c3');
+                }
+            } else {
+                customConflict = isDuplicateInScope(tableId, this, cleanValue, null);
+            }
+
+            if (customConflict) {
+                alert(`"${this.value}" ተመዝግቡ እዩ`);
+                this.value = ''; 
+            }
+            
+            // Re-validate and clear input values if table references shift dynamically
+            filterInputBoxCharacters();
+            executeGlobalDecoder(); 
+        });
+    }
+
+    // Construct Table 1 UI
+    const t1Body = document.getElementById('t1Body');
+    for (let i = 1; i <= 16; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="matrix-input t1-c1"></td>
+            <td><input type="text" class="matrix-input t1-c2"></td>
+            <td><input type="text" class="matrix-input t1-c3"></td>
+        `;
+        t1Body.appendChild(tr);
+        restrictInput('t1Body', tr.querySelector('.t1-c1'), baseAmharicRegex, 1, 't1-c1');
+        restrictInput('t1Body', tr.querySelector('.t1-c2'), baseSignNumRegex, 1, 't1-c2');
+        restrictInput('t1Body', tr.querySelector('.t1-c3'), baseAmharicRegex, 1, 't1-c3');
+    }
+
+    // Construct Table 2 UI
+    const t2Body = document.getElementById('t2Body');
+    for (let i = 1; i <= 7; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="matrix-input t2-c1"></td>
+            <td class="static-fidel">${fixedAmharicVowels[i-1]}</td>
+            <td><input type="text" class="matrix-input t2-c3"></td>
+        `;
+        t2Body.appendChild(tr);
+        restrictInput('t2Body', tr.querySelector('.t2-c1'), baseSignNumRegex, 1, null);
+        restrictInput('t2Body', tr.querySelector('.t2-c3'), baseSignNumRegex, 1, null);
+    }
+
+    // Construct Table 3 UI
+    const t3Body = document.getElementById('t3Body');
+    for (let i = 0; i <= 9; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="matrix-input t3-c1"></td>
+            <td><input type="text" class="matrix-input t3-c2"></td>
+        `;
+        t3Body.appendChild(tr);
+        restrictInput('t3Body', tr.querySelector('.t3-c1'), numberOnlyRegex, 1, null);
+        restrictInput('t3Body', tr.querySelector('.t3-c2'), baseSignNumRegex, 2, null);
+    }
+
+    function setMatrixLockState(shouldLock) {
+        const allInputs = document.querySelectorAll('.matrix-input');
+        document.getElementById('metseweCodeBox').disabled = shouldLock;
+        allInputs.forEach(input => {
+            input.disabled = shouldLock;
+        });
+
+        const saveBtn = document.getElementById('saveMatrixBtn');
+        const editBtn = document.getElementById('editMatrixBtn');
+
+        if (shouldLock) {
+            saveBtn.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+        } else {
+            saveBtn.style.display = 'inline-block';
+            editBtn.style.display = 'none';
+        }
+    }
+
+    // Auto-Spacer Functionality
+    function handleAutoSpacing(event) {
+        let inputEl = event.target;
+        let val = inputEl.value;
+        
+        if (event.inputType === 'deleteContentBackward') return;
+
+        let pieces = val.split(' ');
+        let lastPiece = pieces[pieces.length - 1];
+
+        if (lastPiece.length === 2) {
+            inputEl.value = val + ' ';
+        }
+    }
+
+    // Decoder Function
+    function executeGlobalDecoder() {
+        const inputRaw = document.getElementById('inputBox').value.trim();
+        if (!inputRaw) {
+            masterTranslationClean = "";
+            document.getElementById('outputBox').value = "";
+            return;
+        }
+
+        const tokens = inputRaw.split(/\s+/);
+        let decodedAccumulator = "";
+
+        const t1Rows = document.querySelectorAll('#t1Body tr');
+        const t2Rows = document.querySelectorAll('#t2Body tr');
+        const t3Rows = document.querySelectorAll('#t3Body tr');
+
+        tokens.forEach(function(token) {
+            let table3MatchedValue = null;
+            t3Rows.forEach(function(row) {
+                const keyNum = row.querySelector('.t3-c2').value.trim();
+                const targetValue = row.querySelector('.t3-c1').value.trim();
+                if (keyNum !== "" && keyNum === token) {
+                    table3MatchedValue = targetValue; 
+                }
+            });
+
+            if (table3MatchedValue !== null) {
+                decodedAccumulator += table3MatchedValue;
+                return; 
+            }
+
+            if (token.length < 2) {
+                decodedAccumulator += token;
+                return;
+            }
+
+            const inputSign = token.substring(0, 1);
+            const inputShiftKey = token.substring(1);
+
+            let baseLetter = "";
+            let targetVowelIndex = -1;
+            let targetStreamMode = "";
+
+            t2Rows.forEach(function(row, index) {
+                const col1Sign = row.querySelector('.t2-c1').value.trim();
+                const col3Sign = row.querySelector('.t2-c3').value.trim();
+
+                if (col1Sign === inputShiftKey) {
+                    targetVowelIndex = index;
+                    targetStreamMode = "LEFT";
+                } else if (col3Sign === inputShiftKey) {
+                    targetVowelIndex = index;
+                    targetStreamMode = "RIGHT";
+                }
+            });
+
+            if (targetStreamMode !== "") {
+                t1Rows.forEach(function(row) {
+                    const signCellVal = row.querySelector('.t1-c2').value.trim();
+                    if (signCellVal === inputSign) {
+                        if (targetStreamMode === "LEFT") {
+                            baseLetter = row.querySelector('.t1-c1').value.trim();
+                        } else if (targetStreamMode === "RIGHT") {
+                            baseLetter = row.querySelector('.t1-c3').value.trim();
+                        }
+                    }
+                });
+            }
+
+            if (baseLetter && targetVowelIndex !== -1) {
+                decodedAccumulator += calculateUnicodeVowel(baseLetter, targetVowelIndex);
+            } else {
+                decodedAccumulator += `[?:${token}]`;
+            }
+        });
+
+        masterTranslationClean = decodedAccumulator;
+
+        if (document.activeElement === document.getElementById('inputBox')) {
+             document.getElementById('outputBox').value = decodedAccumulator;
+        }
+    }
+
+    function calculateUnicodeVowel(baseChar, vowelIndex) {
+        const baseCharCode = baseChar.charCodeAt(0);
+        const unicodeBaseStart = baseCharCode - (baseCharCode % 8);
+        return String.fromCharCode(unicodeBaseStart + vowelIndex);
+    }
+
+    // Save Matrix Event Listener
+    document.getElementById('saveMatrixBtn').addEventListener('click', function() {
+        const matrixData = { 
+          metseweCode: document.getElementById('metseweCodeBox').value, 
+          t1: [], 
+          t2: [], 
+          t3: [] };
+
+        document.querySelectorAll('#t1Body tr').forEach(r => {
+            matrixData.t1.push([r.cells[0].firstChild.value, r.cells[1].firstChild.value, r.cells[2].firstChild.value]);
+        });
+        document.querySelectorAll('#t2Body tr').forEach(r => {
+            matrixData.t2.push([r.cells[0].firstChild.value, r.cells[2].firstChild.value]);
+        });
+        document.querySelectorAll('#t3Body tr').forEach(r => {
+            matrixData.t3.push([r.cells[0].firstChild.value, r.cells[1].firstChild.value]);
+        });
+
+        localStorage.setItem('savedCipherMatrixdcb', JSON.stringify(matrixData));
+        alert('ብትክክል ዶ መልእኻ?');
+        setMatrixLockState(true);
+    });
+
+    document.getElementById('editMatrixBtn').addEventListener('click', function() {
+        setMatrixLockState(false);
+    });
+
+    // Load saved matrix data profiles
+    window.addEventListener('DOMContentLoaded', function() {
+        const structuralRaw = localStorage.getItem('savedCipherMatrixdcb');
+        if (!structuralRaw) return;
+        
+        try {
+            const data = JSON.parse(structuralRaw);
+            if (data.metseweCode) {
+                document.getElementById('metseweCodeBox').value = data.metseweCode;
+            }
+            const t1Rows = document.querySelectorAll('#t1Body tr');
+            t1Rows.forEach((r, idx) => {
+                if (data.t1[idx]) {
+                    r.cells[0].firstChild.value = data.t1[idx][0];
+                    r.cells[1].firstChild.value = data.t1[idx][1];
+                    r.cells[2].firstChild.value = data.t1[idx][2];
+                }
+            });
+
+            const t2Rows = document.querySelectorAll('#t2Body tr');
+            t2Rows.forEach((r, idx) => {
+                if (data.t2[idx]) {
+                    r.cells[0].firstChild.value = data.t2[idx][0];
+                    r.cells[2].firstChild.value = data.t2[idx][1];
+                }
+            });
+
+            const t3Rows = document.querySelectorAll('#t3Body tr');
+            t3Rows.forEach((r, idx) => {
+                if (data.t3[idx]) {
+                    r.cells[0].firstChild.value = data.t3[idx][0];
+                    r.cells[1].firstChild.value = data.t3[idx][1];
+                }
+            });
+            executeGlobalDecoder();
+            setMatrixLockState(true);
+            
+        } catch (err) { console.error("Error unpacking layout storage profiles", err); }
+    });
+
+    // Downloader
+    document.getElementById('downloadTextBtn').addEventListener('click', function() {
+        const textPayload = document.getElementById('outputBox').value;
+        if (!textPayload) { alert("ዝወርድ ፅሑፍ የለን"); return; }
+        
+        const blob = new Blob([textPayload], { type: 'text/plain;charset=utf-8' });
+        const temporaryAnchor = document.createElement('a');
+        temporaryAnchor.download = 'decrypted_message.txt';
+        temporaryAnchor.href = URL.createObjectURL(blob);
+        temporaryAnchor.click();
+        URL.revokeObjectURL(temporaryAnchor.href);
+    });
+
+    // Clear Button
+    document.getElementById('clearInputBtn').addEventListener('click', function() {
+        const confirmClear = confirm("ርግፀኛ ዲኻ ፅሑፍ ከተጥፍእ?");
+        if (confirmClear) {
+            document.getElementById('inputBox').value = "";
+            document.getElementById('outputBox').value = "";
+        }
+    });
+
+    // Event hooks configuration
+    document.getElementById('inputBox').addEventListener('input', filterInputBoxCharacters); // Run strict filter first
+    document.getElementById('inputBox').addEventListener('input', handleAutoSpacing);
+    document.getElementById('inputBox').addEventListener('input', executeGlobalDecoder);
+    document.body.addEventListener('input', executeGlobalDecoder);
+</script>
+
+</body>
+</html>

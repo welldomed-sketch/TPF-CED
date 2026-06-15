@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified 3-Matrix Cipher Engine</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --border: #cbd5e1;
+            --text: #0f172a;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 { text-align: center; font-size: 1.6rem; margin-bottom: 0.5rem; color: #1e293b; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            .workspace { grid-template-columns: 1fr 1fr; }
+            .full-row { grid-column: span 2; }
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+            background-color: green;
+            color: purple;
+        }
+
+        .card h2 { font-size: 1rem; color: #334155; margin-top: 0; margin-bottom: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.4rem; }
+
+        .table-wrap {
+            max-height: 380px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9rem; }
+        th { background-color: blue; color: red; font-size: 1.05rem; font-weight: 600; padding: 0.6rem; border: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+        td { padding: 0.4rem; border: 1px solid var(--border); }
+
+        .matrix-input {
+            width: 85%;
+            padding: 0.35rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .matrix-input:focus { border-color: var(--primary); background-color: #eff6ff; }
+        
+        .matrix-input:disabled {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border-color: #e2e8f0;
+            cursor: not-allowed;
+        }
+        
+        .static-fidel { font-weight: bold; color: #0f172a; font-size: 1.1rem; }
+
+        .translator-card {
+            background: #1e293b;
+            color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .translator-card h2 { color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; margin-top: 0; }
+        
+        .io-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        @media (min-width: 600px) { .io-group { grid-template-columns: 1fr 1fr; } }
+
+        .field { display: flex; flex-direction: column; gap: 0.5rem; }
+        .field label { font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; font-weight: bold; }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background-color: #ef4444; }
+        .btn-success { background-color: #22c55e; }
+        .btn-warning { background-color: #f59e0b; color: white; }
+        
+        .action-container {
+            grid-column: span 1;
+            display: flex;
+            gap: 0.5rem;
+        }
+        @media (min-width: 900px) { .action-container { grid-column: span 2; } }
+
+        .cipher-textarea {
+            width: 110%;
+            height: 400px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #38bdf8;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+        #outputBox { color: #4ade80; background: #0f172a; font-family: system-ui, sans-serif;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>መግኣዚ ንቕድሚት መእሰሪ</h1>
+  <div class="custom-field-card" style="background: #ffffff; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+    <h1 style="text-align: left; font-size: 1.2rem; margin-top: 0;">መፀውዕ ኮድ</h1>
+    <textarea id="metseweCodeBox" style="width: 100%; height: 60px; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; outline: none; resize: none; box-sizing: border-box;" placeholder="መፀውዕ ኮድ ፅሓፍ"></textarea>
+</div>
+    <div class="workspace">
+        
+        <div class="card">
+            <h2>ተነባቢ</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ፊደል</th>
+                            <th>ምልክት</th>
+                            <th>ፊደል</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t1Body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>መግአዚ</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ምልክት</th>
+                            <th>መናበብ</th>
+                            <th>ምልክት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t2Body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card full-row">
+            <h2>ቑፅሪታት</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ቑፅሪ</th>
+                            <th>ምልክት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="t3Body"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="action-container">
+            <button class="btn btn-success" id="saveMatrixBtn">ኮድ ኣስፍር</button>
+            <button class="btn btn-warning" id="editMatrixBtn" style="display: none;">ኣስተኻኽል</button>
+        </div>
+    
+    </div>
+
+    <div class="translator-card">
+        <h2>ፅሑፍ መእሰሪ</h2>
+        <div class="io-group">
+            <div class="field">
+                <label for="inputBox"> ፅሑፍ ኣብዚ ፅሓፍ</label>
+                <textarea id="inputBox" class="cipher-textarea" placeholder="ፅሓፍ"></textarea>
+            </div>
+            <button class="btn btn-danger" id="clearInputBtn">ፅሑፍ ኣጥፍእ</button>
+       
+            <div class="field">
+                <label for="outputBox"> ኮድ(እሳር)</label>
+                <textarea id="outputBox" class="cipher-textarea" readonly placeholder="ውፅእት"></textarea>
+            </div>
+            <button class="btn" id="downloadTextBtn">ኮድ ኣውርድ</button>
+          
+        </div>
+    </div>
+</div>
+
+<script>
+    const fixedAmharicVowels = ['ሀ', 'ሁ', 'ሂ', 'ሃ', 'ሄ', 'ህ', 'ሆ'];
+    
+    const amharicBase = "ሀለሐመሠረሰሸቀበቨተቸኀነኘአከኸወዐዘዠየደጀገጠጨጰጸፀፈፐ";
+    const baseAmharicRegex = new RegExp(`[^${amharicBase}]`, 'g');
+    const baseSignNumRegex = new RegExp(`[^${amharicBase}0-9+\\-*=]`, 'g');
+    const numberOnlyRegex = /[^0-9]/g;
+
+    // RegEx target mapping for the InputBox Validation: 
+    // Matches everything EXCEPT Ge'ez Ethiopic unicode range (\u1200-\u137F), 0-9 digits, specific operators, and whitespaces.
+    const allowedInputBoxRegex = /[^\u1200-\u137F0-9+\-*=\s]/g;
+
+    function isDuplicateInScope(tableId, targetInput, valueToTest, targetScopeClass) {
+        if (!valueToTest) return false;
+        let queryPattern = '#' + tableId + ' .matrix-input';
+        if (targetScopeClass) { queryPattern = '#' + tableId + ' .' + targetScopeClass; }
+        const scopedInputs = document.querySelectorAll(queryPattern);
+        let duplicateFound = false;
+        scopedInputs.forEach(function(input) {
+            if (input !== targetInput && input.value.trim() === valueToTest) { duplicateFound = true; }
+        });
+        return duplicateFound;
+    }
+
+    function restrictInput(tableId, element, regex, maxLength, columnScopeClass) {
+        element.addEventListener('input', function() {
+            this.value = this.value.replace(regex, '');
+            if (this.value.length > maxLength) { this.value = this.value.substring(0, maxLength); }
+            const cleanValue = this.value.trim();
+            let customConflict = false;
+            if (tableId === 't1Body') {
+                if (columnScopeClass === 't1-c2') { customConflict = isDuplicateInScope(tableId, this, cleanValue, 't1-c2'); }
+                else { customConflict = isDuplicateInScope(tableId, this, cleanValue, 't1-c1') || isDuplicateInScope(tableId, this, cleanValue, 't1-c3'); }
+            } else { customConflict = isDuplicateInScope(tableId, this, cleanValue, null); }
+            if (customConflict) {
+                alert(`"${this.value}" ተመዝግቡ እዩ`);
+                this.value = ''; 
+                executeGlobalDecoder(); 
+            }
+        });
+    }
+
+    // 1. Table 1 Setup
+    const t1Body = document.getElementById('t1Body');
+    for (let i = 1; i <= 16; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="matrix-input t1-c1"></td>
+            <td><input type="text" class="matrix-input t1-c2"></td>
+            <td><input type="text" class="matrix-input t1-c3"></td>
+        `;
+        t1Body.appendChild(tr);
+        restrictInput('t1Body', tr.querySelector('.t1-c1'), baseAmharicRegex, 1, 't1-c1');
+        restrictInput('t1Body', tr.querySelector('.t1-c2'), baseSignNumRegex, 1, 't1-c2');
+        restrictInput('t1Body', tr.querySelector('.t1-c3'), baseAmharicRegex, 1, 't1-c3');
+    }
+
+    // 2. Table 2 Setup
+    const t2Body = document.getElementById('t2Body');
+    for (let i = 1; i <= 7; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="matrix-input t2-c1"></td>
+            <td class="static-fidel">${fixedAmharicVowels[i-1]}</td>
+            <td><input type="text" class="matrix-input t2-c3"></td>
+        `;
+        t2Body.appendChild(tr);
+        restrictInput('t2Body', tr.querySelector('.t2-c1'), baseSignNumRegex, 1, null);
+        restrictInput('t2Body', tr.querySelector('.t2-c3'), baseSignNumRegex, 1, null);
+    }
+
+    // 3. Table 3 Setup
+    const t3Body = document.getElementById('t3Body');
+    for (let i = 0; i <= 9; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="matrix-input t3-c1"></td>
+            <td><input type="text" class="matrix-input t3-c2"></td>
+        `;
+        t3Body.appendChild(tr);
+        restrictInput('t3Body', tr.querySelector('.t3-c1'), numberOnlyRegex, 1, null);
+        restrictInput('t3Body', tr.querySelector('.t3-c2'), baseSignNumRegex, 2, null);
+    }
+
+    function setMatrixLockState(shouldLock) {
+        document.querySelectorAll('.matrix-input').forEach(input => { input.disabled = shouldLock; });
+        document.getElementById('metseweCodeBox').disabled = shouldLock; 
+        const saveBtn = document.getElementById('saveMatrixBtn');
+        
+        const editBtn = document.getElementById('editMatrixBtn');
+        if (shouldLock) {
+            saveBtn.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+        } else {
+            saveBtn.style.display = 'inline-block';
+            editBtn.style.display = 'none';
+        }
+    }
+
+    // 5. Dynamic Matrix Encoding Engine
+    function executeGlobalDecoder() {
+        const inputRaw = document.getElementById('inputBox').value;
+        if (!inputRaw) {
+            document.getElementById('outputBox').value = "";
+            return;
+        }
+
+        let outputString = "";
+        const t1Rows = document.querySelectorAll('#t1Body tr');
+        const t2Rows = document.querySelectorAll('#t2Body tr');
+        const t3Rows = document.querySelectorAll('#t3Body tr');
+
+        for (let i = 0; i < inputRaw.length; i++) {
+            let char = inputRaw.charAt(i);
+
+            if (char === " " || char === "\n") {
+                outputString += char;
+                continue;
+            }
+
+            // Route 1: Table 3 Numbers Direct Check
+            let numMatch = null;
+            t3Rows.forEach(row => {
+                const targetNum = row.querySelector('.t3-c1').value.trim();
+                const codeValue = row.querySelector('.t3-c2').value.trim();
+                if (targetNum !== "" && targetNum === char) {
+                    numMatch = codeValue;
+                }
+            });
+            if (numMatch !== null) {
+                outputString += numMatch + " ";
+                continue;
+            }
+
+            // Route 2: Dynamic Ge'ez Vowel Matrix Lookup
+            let baseCharCode = char.charCodeAt(0);
+            let vowelIndex = baseCharCode % 8; 
+            if (vowelIndex > 7) vowelIndex = 0;
+
+            let baseAnchorChar = String.fromCharCode(baseCharCode - vowelIndex);
+            let cipherToken = "";
+
+            t1Rows.forEach(row => {
+                const col1Val = row.querySelector('.t1-c1').value.trim();
+                const col2Val = row.querySelector('.t1-c2').value.trim();
+                const col3Val = row.querySelector('.t1-c3').value.trim();
+
+                if (col1Val !== "" && col1Val === baseAnchorChar) {
+                    let t2Modifier = "";
+                    if (t2Rows[vowelIndex]) {
+                        t2Modifier = t2Rows[vowelIndex].querySelector('.t2-c1').value.trim();
+                    }
+                    cipherToken =  t2Modifier + col2Val ;
+                }
+                else if (col3Val !== "" && col3Val === baseAnchorChar) {
+                    let t2Modifier = "";
+                    if (t2Rows[vowelIndex]) {
+                        t2Modifier = t2Rows[vowelIndex].querySelector('.t2-c3').value.trim();
+                    }
+                    cipherToken = t2Modifier + col2Val ;
+                }
+            });
+
+            if (cipherToken !== "") {
+                outputString += cipherToken + " ";
+            } else {
+                outputString += char; 
+            }
+        }
+
+        document.getElementById('outputBox').value = outputString.trim();
+    }
+
+    // Storage Management
+    document.getElementById('saveMatrixBtn').addEventListener('click', function() {
+        const matrixData = { 
+          metseweCode: document.getElementById('metseweCodeBox').value, 
+          t1: [], 
+          t2: [], 
+          t3: [] };
+        document.querySelectorAll('#t1Body tr').forEach(r => {
+            matrixData.t1.push([r.cells[0].firstChild.value, r.cells[1].firstChild.value, r.cells[2].firstChild.value]);
+        });
+        document.querySelectorAll('#t2Body tr').forEach(r => {
+            matrixData.t2.push([r.cells[0].firstChild.value, r.cells[2].firstChild.value]);
+        });
+        document.querySelectorAll('#t3Body tr').forEach(r => {
+            matrixData.t3.push([r.cells[0].firstChild.value, r.cells[1].firstChild.value]);
+        });
+        localStorage.setItem('savedCipherMatrixecf', JSON.stringify(matrixData));
+        alert('ብትክክል ዶ መልእኻ?');
+        setMatrixLockState(true);
+    });
+
+    document.getElementById('editMatrixBtn').addEventListener('click', function() {
+        setMatrixLockState(false);
+    });
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const structuralRaw = localStorage.getItem('savedCipherMatrixenf');
+        if (!structuralRaw) return;
+        try {
+            const data = JSON.parse(structuralRaw);
+            if (data.metseweCode) {
+                document.getElementById('metseweCodeBox').value = data.metseweCode;
+            }
+            document.querySelectorAll('#t1Body tr').forEach((r, idx) => {
+                if (data.t1[idx]) {
+                    r.cells[0].firstChild.value = data.t1[idx][0];
+                    r.cells[1].firstChild.value = data.t1[idx][1];
+                    r.cells[2].firstChild.value = data.t1[idx][2];
+                }
+            });
+            document.querySelectorAll('#t2Body tr').forEach((r, idx) => {
+                if (data.t2[idx]) {
+                    r.cells[0].firstChild.value = data.t2[idx][0];
+                    r.cells[2].firstChild.value = data.t2[idx][1];
+                }
+            });
+            document.querySelectorAll('#t3Body tr').forEach((r, idx) => {
+                if (data.t3[idx]) {
+                    r.cells[0].firstChild.value = data.t3[idx][0];
+                    r.cells[1].firstChild.value = data.t3[idx][1];
+                }
+            });
+            executeGlobalDecoder();
+            setMatrixLockState(true);
+        } catch (err) { console.error(err); }
+    });
+
+    document.getElementById('downloadTextBtn').addEventListener('click', function() {
+        const textPayload = document.getElementById('outputBox').value;
+        if (!textPayload) { alert("ዝወርድ ኮድ የለን"); return; }
+        const blob = new Blob([textPayload], { type: 'text/plain;charset=utf-8' });
+        const temporaryAnchor = document.createElement('a');
+        temporaryAnchor.download = 'encrypted_message.txt';
+        temporaryAnchor.href = URL.createObjectURL(blob);
+        temporaryAnchor.click();
+        URL.revokeObjectURL(temporaryAnchor.href);
+    });
+
+    document.getElementById('clearInputBtn').addEventListener('click', function() {
+        const confirmClear = confirm("ርግፀኛ ዲኻ ፅሑፍ ከተጥፍእ?");
+        if (confirmClear) {
+            document.getElementById('inputBox').value = "";
+            document.getElementById('outputBox').value = "";
+        }
+    });
+
+    // Enforce custom constraints explicitly on the primary user input box
+    document.getElementById('inputBox').addEventListener('input', function() {
+        this.value = this.value.replace(allowedInputBoxRegex, '');
+        executeGlobalDecoder();
+    });
+    
+    document.body.addEventListener('input', executeGlobalDecoder);
+</script>
+
+</body>
+</html>
