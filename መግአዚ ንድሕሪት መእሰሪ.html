@@ -131,7 +131,13 @@
             outline: none;
             box-sizing: border-box;
         }
+        .cipher-textarea:disabled {
+            background: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
+        }
         #outputBox { color: #4ade80; background: #0f172a; font-family: system-ui, sans-serif;}
+        .button-row { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
     </style>
 </head>
 <body>
@@ -204,14 +210,18 @@
             <div class="field">
                 <label for="inputBox">ፅሑፍ ኣብዚ ፅሓፍ</label>
                 <textarea id="inputBox" class="cipher-textarea" placeholder="ፅሓፍ"></textarea>
-            </div>
-            <button class="btn btn-danger" id="clearInputBtn">ፅሑፍ ኣጥፍእ</button>
+                <div class="button-row">
+                    <button class="btn btn-success" id="saveInputBtn">ፅሑፍ ኣስፍር</button>
+                    <button class="btn btn-warning" id="editInputBtn" style="display: none;">ፅሑፍ ኣስተኻኽል</button>
+                   <button class="btn btn-danger" id="clearInputBtn">ፅሑፍ ኣጥፍእ</button>
        
+                </div>
+            </div>
+           
             <div class="field">
                 <label for="outputBox">ኮድ(እሳር)</label>
                 <textarea id="outputBox" class="cipher-textarea" readonly placeholder="ውፅእት"></textarea>
             </div>
-            <button class="btn" id="downloadTextBtn">ኮድ ኣውርድ</button>
           
         </div>
     </div>
@@ -411,47 +421,62 @@
         setMatrixLockState(false);
     });
 
-    window.addEventListener('DOMContentLoaded', function() {
-        const structuralRaw = localStorage.getItem('savedCipherMatrixenl');
-        if (!structuralRaw) return;
-        try {
-            const data = JSON.parse(structuralRaw);
-            if (data.metseweCode) {
-                document.getElementById('metseweCodeBox').value = data.metseweCode;
-            }
-            document.querySelectorAll('#t1Body tr').forEach((r, idx) => {
-                if (data.t1[idx]) {
-                    r.cells[0].firstChild.value = data.t1[idx][0];
-                    r.cells[1].firstChild.value = data.t1[idx][1];
-                    r.cells[2].firstChild.value = data.t1[idx][2];
-                }
-            });
-            document.querySelectorAll('#t2Body tr').forEach((r, idx) => {
-                if (data.t2[idx]) {
-                    r.cells[0].firstChild.value = data.t2[idx][0];
-                    r.cells[2].firstChild.value = data.t2[idx][1];
-                }
-            });
-            document.querySelectorAll('#t3Body tr').forEach((r, idx) => {
-                if (data.t3[idx]) {
-                    r.cells[0].firstChild.value = data.t3[idx][0];
-                    r.cells[1].firstChild.value = data.t3[idx][1];
-                }
-            });
-            executeGlobalDecoder();
-            setMatrixLockState(true);
-        } catch (err) { console.error(err); }
+    // Input Control Rules Configuration
+    document.getElementById('saveInputBtn').addEventListener('click', function() {
+        const payload = document.getElementById('inputBox').value;
+        localStorage.setItem('savedCipherInputBoxPayload', payload);
+        document.getElementById('inputBox').disabled = true;
+        document.getElementById('saveInputBtn').style.display = 'none';
+        document.getElementById('editInputBtn').style.display = 'inline-block';
+        
     });
 
-    document.getElementById('downloadTextBtn').addEventListener('click', function() {
-        const textPayload = document.getElementById('outputBox').value;
-        if (!textPayload) { alert("ዝወርድ ኮድ የለን"); return; }
-        const blob = new Blob([textPayload], { type: 'text/plain;charset=utf-8' });
-        const temporaryAnchor = document.createElement('a');
-        temporaryAnchor.download = 'encrypted_message.txt';
-        temporaryAnchor.href = URL.createObjectURL(blob);
-        temporaryAnchor.click();
-        URL.revokeObjectURL(temporaryAnchor.href);
+    document.getElementById('editInputBtn').addEventListener('click', function() {
+        document.getElementById('inputBox').disabled = false;
+        document.getElementById('saveInputBtn').style.display = 'inline-block';
+        document.getElementById('editInputBtn').style.display = 'none';
+    });
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const structuralRaw = localStorage.getItem('savedCipherMatrixenl');
+        if (structuralRaw) {
+            try {
+                const data = JSON.parse(structuralRaw);
+                if (data.metseweCode) {
+                    document.getElementById('metseweCodeBox').value = data.metseweCode;
+                }
+                document.querySelectorAll('#t1Body tr').forEach((r, idx) => {
+                    if (data.t1[idx]) {
+                        r.cells[0].firstChild.value = data.t1[idx][0];
+                        r.cells[1].firstChild.value = data.t1[idx][1];
+                        r.cells[2].firstChild.value = data.t1[idx][2];
+                    }
+                });
+                document.querySelectorAll('#t2Body tr').forEach((r, idx) => {
+                    if (data.t2[idx]) {
+                        r.cells[0].firstChild.value = data.t2[idx][0];
+                        r.cells[2].firstChild.value = data.t2[idx][1];
+                    }
+                });
+                document.querySelectorAll('#t3Body tr').forEach((r, idx) => {
+                    if (data.t3[idx]) {
+                        r.cells[0].firstChild.value = data.t3[idx][0];
+                        r.cells[1].firstChild.value = data.t3[idx][1];
+                    }
+                });
+                setMatrixLockState(true);
+            } catch (err) { console.error(err); }
+        }
+
+        const savedInput = localStorage.getItem('savedCipherInputBoxPayload');
+        if (savedInput) {
+            document.getElementById('inputBox').value = savedInput;
+            document.getElementById('inputBox').disabled = true;
+            document.getElementById('saveInputBtn').style.display = 'none';
+            document.getElementById('editInputBtn').style.display = 'inline-block';
+        }
+
+        executeGlobalDecoder();
     });
 
     document.getElementById('clearInputBtn').addEventListener('click', function() {
@@ -459,6 +484,11 @@
         if (confirmClear) {
             document.getElementById('inputBox').value = "";
             document.getElementById('outputBox').value = "";
+            localStorage.removeItem('savedCipherInputBoxPayload');
+            localStorage.removeItem('savedCipherOutputBoxPayload');
+            document.getElementById('inputBox').disabled = false;
+            document.getElementById('saveInputBtn').style.display = 'inline-block';
+            document.getElementById('editInputBtn').style.display = 'none';
         }
     });
 

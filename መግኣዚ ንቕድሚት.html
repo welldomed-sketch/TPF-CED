@@ -109,6 +109,7 @@
         .btn-danger { background-color: #ef4444; }
         .btn-success { background-color: #22c55e; }
         .btn-warning { background-color: #f59e0b; color: white; }
+        .btn-action { background-color: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
         
         .action-container {
             grid-column: span 1;
@@ -132,6 +133,12 @@
             box-sizing: border-box;
         }
         #outputBox { color: #4ade80; background: #0f172a; font-family: system-ui, sans-serif;}
+        
+        .btn-panel {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -204,14 +211,21 @@
             <div class="field">
                 <label for="inputBox">ኮድ ኣብዚ ፅሓፍ</label>
                 <textarea id="inputBox" class="cipher-textarea" placeholder="ፅሓፍ"></textarea>
+                <div class="btn-panel">
+                    <button class="btn btn-success" id="saveInputBtn">ኣስፍር</button>
+                    <button class="btn btn-warning" id="editInputBtn" style="display: none;">ኣስተኻኽል</button>
+                    <button class="btn btn-danger" id="clearInputBtn">ኮድ ኣጥፍእ</button>
+                </div>
             </div>
-            <button class="btn btn-danger" id="clearInputBtn">ኮድ ኣጥፍእ</button>
        
             <div class="field">
                 <label for="outputBox">ውፅኢት ኮድ </label>
                 <textarea id="outputBox" class="cipher-textarea" placeholder="ውፅእት"></textarea>
+                <div class="btn-panel">
+                    <button class="btn btn-success" id="saveOutputBtn">ውፅኢት ኣስፍር</button>
+                    <button class="btn btn-warning" id="editOutputBtn" style="display: none;">ኣስተኻኽል</button>
+                </div>
             </div>
-            <button class="btn" id="downloadTextBtn">ፅሑፍ ኣውርድ</button>
           
         </div>
     </div>
@@ -266,7 +280,7 @@
         // Scan all inputs inside matrix layout elements to construct a valid matrix character pool
         let allowedSet = new Set([" ", "\n"]); // Always preserve spaces and structural breaks
         
-        document.querySelectorAll('.matrix-input').forEach(input => {
+        document.querySelectorAll('.t1-c2, .t2-c1, .t2-c3, .t3-c2').forEach(input => {
             let val = input.value.trim();
             if (val) {
                 for (let char of val) {
@@ -532,6 +546,32 @@
         setMatrixLockState(false);
     });
 
+    // Save and Edit handling for InputBox text payload
+    document.getElementById('saveInputBtn').addEventListener('click', function() {
+        document.getElementById('inputBox').disabled = true;
+        this.style.display = 'none';
+        document.getElementById('editInputBtn').style.display = 'inline-block';
+    });
+
+    document.getElementById('editInputBtn').addEventListener('click', function() {
+        document.getElementById('inputBox').disabled = false;
+        this.style.display = 'none';
+        document.getElementById('saveInputBtn').style.display = 'inline-block';
+    });
+
+    // Save and Edit handling for OutputBox text payload
+    document.getElementById('saveOutputBtn').addEventListener('click', function() {
+        document.getElementById('outputBox').disabled = true;
+        this.style.display = 'none';
+        document.getElementById('editOutputBtn').style.display = 'inline-block';
+    });
+
+    document.getElementById('editOutputBtn').addEventListener('click', function() {
+        document.getElementById('outputBox').disabled = false;
+        this.style.display = 'none';
+        document.getElementById('saveOutputBtn').style.display = 'inline-block';
+    });
+
     // Load saved matrix data profiles
     window.addEventListener('DOMContentLoaded', function() {
         const structuralRaw = localStorage.getItem('CipherMatrix_FORWARD_Uniquecd');
@@ -570,19 +610,6 @@
             setMatrixLockState(true);
             
         } catch (err) { console.error("Error unpacking layout storage profiles", err); }
-    });
-
-    // Downloader
-    document.getElementById('downloadTextBtn').addEventListener('click', function() {
-        const textPayload = document.getElementById('outputBox').value;
-        if (!textPayload) { alert("ዝወርድ ፅሑፍ የለን"); return; }
-        
-        const blob = new Blob([textPayload], { type: 'text/plain;charset=utf-8' });
-        const temporaryAnchor = document.createElement('a');
-        temporaryAnchor.download = 'decrypted_message.txt';
-        temporaryAnchor.href = URL.createObjectURL(blob);
-        temporaryAnchor.click();
-        URL.revokeObjectURL(temporaryAnchor.href);
     });
 
     // Clear Button

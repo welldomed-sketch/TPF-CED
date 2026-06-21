@@ -117,8 +117,14 @@
         }
         @media (min-width: 900px) { .action-container { grid-column: span 2; } }
 
+        .btn-panel {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
         .cipher-textarea {
-            width: 110%;
+            width: 100%;
             height: 400px;
             background: #0f172a;
             border: 1px solid #334155;
@@ -130,6 +136,11 @@
             resize: none;
             outline: none;
             box-sizing: border-box;
+        }
+        .cipher-textarea:disabled {
+            background: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
         }
         #outputBox { color: #4ade80; background: #0f172a; font-family: system-ui, sans-serif;}
     </style>
@@ -204,14 +215,21 @@
             <div class="field">
                 <label for="inputBox">ኮድ ኣብዚ ፅሓፍ</label>
                 <textarea id="inputBox" class="cipher-textarea" placeholder="ፅሓፍ"></textarea>
+                <div class="btn-panel">
+                    <button class="btn btn-success" id="saveInputBtn">ኮድ ኣስፍር</button>
+                    <button class="btn btn-warning" id="editInputBtn" style="display: none;">ኣስተኻኽል</button>
+                    <button class="btn btn-danger" id="clearInputBtn">ኮድ ኣጥፍእ</button>
+                </div>
             </div>
-            <button class="btn btn-danger" id="clearInputBtn">ኮድ ኣጥፍእ</button>
        
             <div class="field">
                 <label for="outputBox">ውፅኢት ኮድ </label>
                 <textarea id="outputBox" class="cipher-textarea" placeholder="ውፅእት"></textarea>
+                <div class="btn-panel">
+                    <button class="btn btn-success" id="saveOutputBtn">ውፅኢት ኣስፍር</button>
+                    <button class="btn btn-warning" id="editOutputBtn" style="display: none;">ኣስተኻኽል</button>
+                </div>
             </div>
-            <button class="btn" id="downloadTextBtn">ፅሑፍ ኣውርድ</button>
           
         </div>
     </div>
@@ -229,6 +247,7 @@
 
     // 1. Strict Keydown Lock for OutputBox
     document.getElementById('outputBox').addEventListener('keydown', function(event) {
+        if (this.disabled) return;
         if (event.key === " " || 
             event.key === "Backspace" || 
             event.key === "Delete" || 
@@ -264,7 +283,7 @@
         // 1. Scan all active inputs within the three tables to collect current accepted characters
         let allowedSet = new Set([" ", "\n"]); // Always allow spaces and linebreaks natively
         
-        document.querySelectorAll('.matrix-input').forEach(input => {
+        document.querySelectorAll('.t1-c2, .t2-c1, .t2-c3, .t3-c2').forEach(input => {
             let val = input.value.trim();
             if (val) {
                 // Handle table 3 columns which might contain 2 character pairs
@@ -402,6 +421,7 @@
 
     // Auto-Spacer Functionality
     function handleAutoSpacing(event) {
+        if (document.getElementById('inputBox').disabled) return;
         let inputEl = event.target;
         let val = inputEl.value;
         
@@ -493,7 +513,7 @@
 
         masterTranslationClean = decodedAccumulator;
 
-        if (document.activeElement === document.getElementById('inputBox')) {
+        if (document.activeElement === document.getElementById('inputBox') || document.getElementById('outputBox').disabled) {
              document.getElementById('outputBox').value = decodedAccumulator;
         }
     }
@@ -531,8 +551,57 @@
         setMatrixLockState(false);
     });
 
+    // Input Box Save & Edit Control
+    document.getElementById('saveInputBtn').addEventListener('click', function() {
+        const val = document.getElementById('inputBox').value;
+        localStorage.setItem('savedCipherInputBox', val);
+        document.getElementById('inputBox').disabled = true;
+        document.getElementById('saveInputBtn').style.display = 'none';
+        document.getElementById('editInputBtn').style.display = 'inline-block';
+        
+    });
+
+    document.getElementById('editInputBtn').addEventListener('click', function() {
+        document.getElementById('inputBox').disabled = false;
+        document.getElementById('saveInputBtn').style.display = 'inline-block';
+        document.getElementById('editInputBtn').style.display = 'none';
+    });
+
+    // Output Box Save & Edit Control
+    document.getElementById('saveOutputBtn').addEventListener('click', function() {
+        const val = document.getElementById('outputBox').value;
+        localStorage.setItem('savedCipherOutputBox', val);
+        document.getElementById('outputBox').disabled = true;
+        document.getElementById('saveOutputBtn').style.display = 'none';
+        document.getElementById('editOutputBtn').style.display = 'inline-block';
+        
+    });
+
+    document.getElementById('editOutputBtn').addEventListener('click', function() {
+        document.getElementById('outputBox').disabled = false;
+        document.getElementById('saveOutputBtn').style.display = 'inline-block';
+        document.getElementById('editOutputBtn').style.display = 'none';
+    });
+
     // Load saved matrix data profiles
     window.addEventListener('DOMContentLoaded', function() {
+        // Unpack input/output textual frames
+        const savedInput = localStorage.getItem('savedCipherInputBox');
+        if (savedInput !== null) {
+            document.getElementById('inputBox').value = savedInput;
+            document.getElementById('inputBox').disabled = true;
+            document.getElementById('saveInputBtn').style.display = 'none';
+            document.getElementById('editInputBtn').style.display = 'inline-block';
+        }
+
+        const savedOutput = localStorage.getItem('savedCipherOutputBox');
+        if (savedOutput !== null) {
+            document.getElementById('outputBox').value = savedOutput;
+            document.getElementById('outputBox').disabled = true;
+            document.getElementById('saveOutputBtn').style.display = 'none';
+            document.getElementById('editOutputBtn').style.display = 'inline-block';
+        }
+
         const structuralRaw = localStorage.getItem('savedCipherMatrixdcb');
         if (!structuralRaw) return;
         
@@ -571,25 +640,14 @@
         } catch (err) { console.error("Error unpacking layout storage profiles", err); }
     });
 
-    // Downloader
-    document.getElementById('downloadTextBtn').addEventListener('click', function() {
-        const textPayload = document.getElementById('outputBox').value;
-        if (!textPayload) { alert("ዝወርድ ፅሑፍ የለን"); return; }
-        
-        const blob = new Blob([textPayload], { type: 'text/plain;charset=utf-8' });
-        const temporaryAnchor = document.createElement('a');
-        temporaryAnchor.download = 'decrypted_message.txt';
-        temporaryAnchor.href = URL.createObjectURL(blob);
-        temporaryAnchor.click();
-        URL.revokeObjectURL(temporaryAnchor.href);
-    });
-
     // Clear Button
     document.getElementById('clearInputBtn').addEventListener('click', function() {
         const confirmClear = confirm("ርግፀኛ ዲኻ ፅሑፍ ከተጥፍእ?");
         if (confirmClear) {
             document.getElementById('inputBox').value = "";
             document.getElementById('outputBox').value = "";
+            localStorage.removeItem('savedCipherInputBox');
+            localStorage.removeItem('savedCipherOutputBox');
         }
     });
 
